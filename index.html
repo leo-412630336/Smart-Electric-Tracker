@@ -65,7 +65,6 @@
       .table-container { overflow-x: auto; }
       canvas { max-width: 100%; height: auto !important; }
       .row { margin: 0 -10px; }
-      /* 修正 RWD 下的卡片欄位 */
       .col-md-3 { width: 50%; padding: 0 10px; } 
       .col-md-4 { padding: 0 10px; }
       .form-control { font-size: 16px; }
@@ -91,18 +90,16 @@
     #loginPage, #dashboardPage { display: none; }
     #loginPage.active, #dashboardPage.active { display: block; }
     
-    /* === (新) 用電量視覺反饋 CSS === */
     .usage-low {
-      background-color: rgba(25, 135, 84, 0.1) !important; /* 淡綠色 */
+      background-color: rgba(25, 135, 84, 0.1) !important; 
     }
     .usage-medium {
-      background-color: rgba(255, 193, 7, 0.1) !important; /* 淡黃色 */
+      background-color: rgba(255, 193, 7, 0.1) !important; 
     }
     .usage-high {
-      background-color: rgba(220, 53, 69, 0.1) !important; /* 淡紅色 */
+      background-color: rgba(220, 53, 69, 0.1) !important; 
     }
 
-    /* 深色模式下的反饋 */
     .dark-mode .usage-low {
       background-color: rgba(25, 135, 84, 0.3) !important;
     }
@@ -112,8 +109,6 @@
     .dark-mode .usage-high {
       background-color: rgba(220, 53, 69, 0.3) !important;
     }
-    /* === (新) CSS 結束 === */
-
   </style>
 </head>
 <body class="bg-light">
@@ -241,7 +236,6 @@
   </div>
 
     <script>
-    // DOM 元素快取
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
     const showRegister = document.getElementById("showRegister");
@@ -251,7 +245,6 @@
     let users = {};
     let records = [];
 
-    // 節能小提示資料庫 ===
     const energyTips = [
       "隨手關燈，拔掉不用的電器插頭。",
       "將冷氣溫度設定在 26-28 度，搭配電扇使用更省電。",
@@ -262,7 +255,6 @@
       "冰箱不要塞太滿，並減少開關門次數。"
     ];
 
-    // === (新) 顯示隨機節能提示的函式 ===
     function showRandomTip() {
       const tipElement = document.getElementById("tipOfTheDay");
       if (tipElement) {
@@ -271,22 +263,19 @@
       }
     }
 
-    // 頁面切換控制：在登入頁和主控台之間切換
     function showPage(pageId) {
       document.querySelectorAll('#loginPage, #dashboardPage').forEach(page => page.classList.remove('active'));
       document.getElementById(pageId).classList.add('active');
     }
 
-    // 載入使用者資料：從 localStorage 讀取當前使用者的電費紀錄
     function loadUserData() {
       const currentUser = localStorage.getItem("currentUser");
       users = JSON.parse(localStorage.getItem("users")) || {};
       records = users[currentUser].records || [];
       renderTable();
-      showRandomTip(); // <-- (新) 載入時顯示提示
+      showRandomTip(); 
     }
 
-    // 電費計算：台電累進電價計算
     function calculateElectricityCostTaiPower(usage) {
       const brackets = [120, 330, 500, 700, 1000];
       const rates = [1.78, 2.55, 3.80, 5.14, 6.44, 8.86];
@@ -299,18 +288,15 @@
       return { total: cost };
     }
 
-    // 更新圖表：根據最新的用電記錄更新趨勢圖
     function updateChart() {
       usageChart.data.labels = records.map(r => r.month);
       usageChart.data.datasets[0].data = records.map(r => r.usage);
       usageChart.update();
     }
 
-    // 渲染表格：顯示電費記錄、計算總用量和平均單價
     function renderTable() {
       recordTableBody.innerHTML = "";
       let totalCost = 0, totalUsage = 0;
-      // (新) 2023年電力排碳係數 (kg CO2e / 度)
       const co2Factor = 0.495; 
 
       records.forEach((rec, idx) => {
@@ -319,16 +305,13 @@
         totalUsage += rec.usage;
         const avgPrice = rec.usage ? (total / rec.usage).toFixed(2) : 0;
 
-        // === (新) 根據用電量決定顏色 ===
-        let usageClass = 'usage-low'; // 預設低用電
-        if (rec.usage > 700) { // 假設高於 700 度為高用電
+        let usageClass = 'usage-low'; 
+        if (rec.usage > 700) { 
           usageClass = 'usage-high';
-        } else if (rec.usage > 330) { // 假設 330~700 為中用電
+        } else if (rec.usage > 330) { 
           usageClass = 'usage-medium';
         }
-        // === (新) 結束 ===
-
-        // === (修改) 將 class 加入 <tr> ===
+        
         recordTableBody.insertAdjacentHTML('beforeend', `
           <tr class="${usageClass}">
             <td>${rec.month}</td>
@@ -344,15 +327,12 @@
       document.getElementById("totalUsage").textContent = totalUsage + " 度";
       document.getElementById("avgPrice").textContent = totalUsage ? (totalCost / totalUsage).toFixed(2) + " 元/度" : "0 元/度";
       
-      // === (新) 碳足跡計算 ===
       const totalCO2 = totalUsage * co2Factor;
       document.getElementById("totalCO2").textContent = totalCO2.toFixed(2) + " kg";
-      // === (新) 結束 ===
       
       updateChart();
     }
 
-    // 註冊表單切換
     showRegister.addEventListener("click", e => {
       e.preventDefault();
       loginForm.classList.add("d-none");
@@ -360,7 +340,6 @@
       msgBox.textContent = "";
     });
 
-    // 登入表單切換
     showLogin.addEventListener("click", e => {
       e.preventDefault();
       registerForm.classList.add("d-none");
@@ -368,7 +347,6 @@
       msgBox.textContent = "";
     });
 
-    // 使用者註冊處理
     registerForm.addEventListener("submit", e => {
       e.preventDefault();
       const username = document.getElementById("regUsername").value.trim();
@@ -394,7 +372,6 @@
       loginForm.classList.remove("d-none");
     });
 
-    // 使用者登入處理
     loginForm.addEventListener("submit", e => {
       e.preventDefault();
       const username = document.getElementById("loginUsername").value.trim();
@@ -417,18 +394,15 @@
       loadUserData();
     });
 
-    // 登出處理
     document.getElementById("logoutBtn").addEventListener("click", () => {
       localStorage.removeItem("currentUser");
       showPage('loginPage');
     });
 
-    // 深色模式切換
     document.getElementById("toggleDark").addEventListener("click", () => {
       document.body.classList.toggle("dark-mode");
     });
 
-    // 刪除所有電費紀錄
     document.getElementById("deleteRecordsBtn").addEventListener("click", () => {
       if (window.confirm("確定要刪除所有電費紀錄嗎？此操作無法復原。")) {
         const currentUser = localStorage.getItem("currentUser");
@@ -439,7 +413,6 @@
       }
     });
 
-    // 新增電費紀錄處理
     document.getElementById("recordForm").addEventListener("submit", e => {
       e.preventDefault();
       const month = document.getElementById("recordMonth").value;
@@ -450,10 +423,9 @@
       localStorage.setItem("users", JSON.stringify(users));
       renderTable();
       e.target.reset();
-      showRandomTip(); // <-- (新) 新增後更新提示
+      showRandomTip(); 
     });
 
-    // 刪除單筆電費紀錄
     recordTableBody.addEventListener("click", e => {
       if (e.target.classList.contains("btn-delete")) {
         const idx = e.target.dataset.idx;
@@ -465,7 +437,6 @@
       }
     });
 
-    // 圖表初始化：設置用電趨勢圖的配置
     const ctx = document.getElementById("usageChart").getContext("2d");
     const usageChart = new Chart(ctx, {
       type: "line",
@@ -501,7 +472,6 @@
       }
     });
 
-    // 初始化：檢查登入狀態並載入適當頁面
     if (localStorage.getItem("currentUser")) {
       document.getElementById("userName").textContent = localStorage.getItem("currentUser");
       showPage('dashboardPage');
