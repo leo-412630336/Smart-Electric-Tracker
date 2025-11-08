@@ -6,16 +6,8 @@
   <title>Smart Electric Tracker</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   
-  <!-- 樣式定義
-    - 基礎樣式：確保頁面布局一致性
-    - RWD 斷點：576px, 768px, 992px, 1200px
-    - 深色模式：支援日/夜間切換
-    - 響應式表格：支援行動裝置橫向捲動
-    - 圖表RWD：確保圖表在各種螢幕尺寸下正確顯示
-    - 列印樣式：優化列印輸出格式
-  -->
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; padding: 0; }
@@ -73,6 +65,8 @@
       .table-container { overflow-x: auto; }
       canvas { max-width: 100%; height: auto !important; }
       .row { margin: 0 -10px; }
+      /* 修正 RWD 下的卡片欄位 */
+      .col-md-3 { width: 50%; padding: 0 10px; } 
       .col-md-4 { padding: 0 10px; }
       .form-control { font-size: 16px; }
       form .btn { width: 100%; margin-bottom: 10px; }
@@ -96,13 +90,37 @@
 
     #loginPage, #dashboardPage { display: none; }
     #loginPage.active, #dashboardPage.active { display: block; }
+    
+    /* === (新) 用電量視覺反饋 CSS === */
+    .usage-low {
+      background-color: rgba(25, 135, 84, 0.1) !important; /* 淡綠色 */
+    }
+    .usage-medium {
+      background-color: rgba(255, 193, 7, 0.1) !important; /* 淡黃色 */
+    }
+    .usage-high {
+      background-color: rgba(220, 53, 69, 0.1) !important; /* 淡紅色 */
+    }
+
+    /* 深色模式下的反饋 */
+    .dark-mode .usage-low {
+      background-color: rgba(25, 135, 84, 0.3) !important;
+    }
+    .dark-mode .usage-medium {
+      background-color: rgba(255, 193, 7, 0.2) !important;
+    }
+    .dark-mode .usage-high {
+      background-color: rgba(220, 53, 69, 0.3) !important;
+    }
+    /* === (新) CSS 結束 === */
+
   </style>
 </head>
 <body class="bg-light">
   <div id="loginPage">
     <div class="container d-flex justify-content-center align-items-center vh-100">
       <div class="card shadow-lg p-4 rounded-4" style="max-width: 400px; width: 100%;">
-        <h3 class="text-center mb-3"><i class="fas fa-bolt text-warning"></i> Smart Electric Tracker</h3>
+        <h3 class="text-center mb-3"><i class="fa-solid fa-bolt text-warning"></i> Smart Electric Tracker</h3>
         
         <form id="loginForm" class="login-form">
           <div class="mb-3">
@@ -138,43 +156,50 @@
     </div>
   </div>
   <div id="dashboardPage">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">Smart Electric Tracker</a>
-        <div class="d-flex">
-          <button id="toggleDark" class="btn btn-secondary me-2">🌙</button>
-          <button id="logoutBtn" class="btn btn-danger">登出</button>
-        </div>
-      </div>
-    </nav>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #28a745;">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">電價計算</a>
+    <div class="d-flex">
+      <button id="toggleDark" class="btn btn-secondary me-2">🌙</button>
+      <button id="logoutBtn" class="btn btn-danger">登出</button>
+    </div>
+  </div>
+</nav>
 
     <div class="container my-4">
       <h2 class="page-title">歡迎, <span id="userName"></span></h2>
 
+      <div class="card shadow-sm p-3 mb-4 bg-success-subtle border-success">
+        <h5><i class="fa-solid fa-leaf"></i> 節能小提示</h5>
+        <p id="tipOfTheDay" class="mb-0">隨手關燈，節省能源。</p>
+      </div>
       <div class="mb-3 text-end">
         <button id="deleteRecordsBtn" class="btn btn-outline-danger">刪除所有紀錄</button>
       </div>
 
       <div class="row mb-4">
-        <div class="col-md-4">
-          <div class="card shadow-sm p-3">
+        <div class="col-md-3 col-6"> <div class="card shadow-sm p-3">
             <h5>總電費</h5>
             <p id="totalCost" class="fs-4 fw-bold">0 元</p>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="card shadow-sm p-3">
+        <div class="col-md-3 col-6"> <div class="card shadow-sm p-3">
             <h5>總用電量</h5>
             <p id="totalUsage" class="fs-4 fw-bold">0 度</p>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="card shadow-sm p-3">
+        <div class="col-md-3 col-6"> <div class="card shadow-sm p-3">
             <h5>平均單價</h5>
             <p id="avgPrice" class="fs-4 fw-bold">0 元/度</p>
           </div>
         </div>
-      </div>
+        <div class="col-md-3 col-6"> <div class="card shadow-sm p-3">
+            <h5>總碳排放</h5>
+            <p id="totalCO2" class="fs-4 fw-bold">0 kg</p>
+          </div>
+        </div>
+        </div>
+      
       <div class="card mb-4 p-3 shadow-sm">
         <h5>新增電費紀錄</h5>
         <form id="recordForm" class="row g-3">
@@ -215,26 +240,7 @@
     </div>
   </div>
 
-    <!-- 程式邏輯
-    功能模組：
-    1. 使用者認證：註冊、登入、登出
-    2. 電費紀錄管理：新增、刪除、列表顯示
-    3. 電費計算：累進電價計算
-    4. 數據視覺化：趨勢圖表
-    5. 介面控制：深色模式、頁面切換
-    
-    資料存儲：
-    - 使用 localStorage 儲存使用者資料與電費紀錄
-    - 資料結構：{
-        users: {
-          [username]: {
-            password: string,
-            records: Array<{month: string, usage: number}>
-          }
-        }
-      }
-  -->
-  <script>
+    <script>
     // DOM 元素快取
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
@@ -244,6 +250,26 @@
     const recordTableBody = document.getElementById("recordTableBody");
     let users = {};
     let records = [];
+
+    // 節能小提示資料庫 ===
+    const energyTips = [
+      "隨手關燈，拔掉不用的電器插頭。",
+      "將冷氣溫度設定在 26-28 度，搭配電扇使用更省電。",
+      "優先選購具有「節能標章」的電器產品。",
+      "定期清潔冷氣濾網，可提升冷房效果並省電。",
+      "使用 LED 燈泡替換傳統燈泡，可節省大量電力。",
+      "白天多利用自然光，減少開燈時間。",
+      "冰箱不要塞太滿，並減少開關門次數。"
+    ];
+
+    // === (新) 顯示隨機節能提示的函式 ===
+    function showRandomTip() {
+      const tipElement = document.getElementById("tipOfTheDay");
+      if (tipElement) {
+        const randomIndex = Math.floor(Math.random() * energyTips.length);
+        tipElement.textContent = energyTips[randomIndex];
+      }
+    }
 
     // 頁面切換控制：在登入頁和主控台之間切換
     function showPage(pageId) {
@@ -257,11 +283,10 @@
       users = JSON.parse(localStorage.getItem("users")) || {};
       records = users[currentUser].records || [];
       renderTable();
+      showRandomTip(); // <-- (新) 載入時顯示提示
     }
 
     // 電費計算：台電累進電價計算
-    // brackets: 各級距用電量 [120, 330, 500, 700, 1000]
-    // rates: 對應費率 [1.78, 2.55, 3.80, 5.14, 6.44, 8.86]
     function calculateElectricityCostTaiPower(usage) {
       const brackets = [120, 330, 500, 700, 1000];
       const rates = [1.78, 2.55, 3.80, 5.14, 6.44, 8.86];
@@ -285,6 +310,8 @@
     function renderTable() {
       recordTableBody.innerHTML = "";
       let totalCost = 0, totalUsage = 0;
+      // (新) 2023年電力排碳係數 (kg CO2e / 度)
+      const co2Factor = 0.495; 
 
       records.forEach((rec, idx) => {
         const { total } = calculateElectricityCostTaiPower(rec.usage);
@@ -292,8 +319,18 @@
         totalUsage += rec.usage;
         const avgPrice = rec.usage ? (total / rec.usage).toFixed(2) : 0;
 
+        // === (新) 根據用電量決定顏色 ===
+        let usageClass = 'usage-low'; // 預設低用電
+        if (rec.usage > 700) { // 假設高於 700 度為高用電
+          usageClass = 'usage-high';
+        } else if (rec.usage > 330) { // 假設 330~700 為中用電
+          usageClass = 'usage-medium';
+        }
+        // === (新) 結束 ===
+
+        // === (修改) 將 class 加入 <tr> ===
         recordTableBody.insertAdjacentHTML('beforeend', `
-          <tr>
+          <tr class="${usageClass}">
             <td>${rec.month}</td>
             <td>${rec.usage}</td>
             <td>${total.toFixed(2)}</td>
@@ -306,6 +343,12 @@
       document.getElementById("totalCost").textContent = totalCost.toFixed(2) + " 元";
       document.getElementById("totalUsage").textContent = totalUsage + " 度";
       document.getElementById("avgPrice").textContent = totalUsage ? (totalCost / totalUsage).toFixed(2) + " 元/度" : "0 元/度";
+      
+      // === (新) 碳足跡計算 ===
+      const totalCO2 = totalUsage * co2Factor;
+      document.getElementById("totalCO2").textContent = totalCO2.toFixed(2) + " kg";
+      // === (新) 結束 ===
+      
       updateChart();
     }
 
@@ -407,6 +450,7 @@
       localStorage.setItem("users", JSON.stringify(users));
       renderTable();
       e.target.reset();
+      showRandomTip(); // <-- (新) 新增後更新提示
     });
 
     // 刪除單筆電費紀錄
